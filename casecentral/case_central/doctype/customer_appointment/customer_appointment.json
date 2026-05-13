@@ -83,7 +83,6 @@
    "read_only": 1
   },
   {
-   "fetch_from": "customer.mobile_no",
    "fieldname": "contact_no",
    "fieldtype": "Data",
    "label": "Contact No",
@@ -218,7 +217,6 @@
    "options": "Case"
   },
   {
-   "fetch_from": "customer.email_id",
    "fieldname": "contact_email",
    "fieldtype": "Data",
    "label": "Contact Email",

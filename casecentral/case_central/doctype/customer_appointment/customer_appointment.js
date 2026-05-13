@@ -32,8 +32,27 @@ frappe.ui.form.on('Customer Appointment', {
 				};
 			}
 		});
+	},
 
-		frm.set_query('case', () => {
+	customer: function(frm) {
+		if (frm.doc.customer) {
+			frappe.call({
+				method: "frappe.contacts.doctype.contact.contact.get_contact_details",
+				args: {
+					customer: frm.doc.customer
+				},
+				callback: function(r) {
+					if (r.message) {
+						if (r.message.phone) frm.set_value('contact_no', r.message.phone);
+						if (r.message.email_id) frm.set_value('contact_email', r.message.email_id);
+						if (r.message.customer_name) frm.set_value('customer_name', r.message.customer_name);
+					}
+				}
+			});
+		}
+	},
+
+	refresh: function(frm) {
 			if (frm.doc.customer) {
 				return {
 					filters: { 'customer': frm.doc.customer }
