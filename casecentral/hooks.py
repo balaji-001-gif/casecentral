@@ -161,3 +161,8 @@ portal_menu_items = [
     {"title": "Cases", "route": "/cases", "role": "Customer"},
     {"title": "Upload Document", "route": "/upload-document", "role": "Customer"}
 ]
+
+website_route_rules = [
+    {"from_route": "/case-detail", "to_route": "case_detail"},
+    {"from_route": "/upload-document", "to_route": "upload_document"}
+]
