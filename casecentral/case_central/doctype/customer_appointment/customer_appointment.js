@@ -18,22 +18,6 @@ frappe.ui.form.on('Customer Appointment', {
 		}
 	},
 
-	refresh: function(frm) {
-		frm.set_query('customer', () => {
-			return {
-				filters: { 'disabled': 0 }
-			};
-		});
-
-		frm.set_query('matter', () => {
-			if (frm.doc.customer) {
-				return {
-					filters: { 'customer': frm.doc.customer }
-				};
-			}
-		});
-	},
-
 	customer: function(frm) {
 		if (frm.doc.customer) {
 			frappe.call({
@@ -53,6 +37,21 @@ frappe.ui.form.on('Customer Appointment', {
 	},
 
 	refresh: function(frm) {
+		frm.set_query('customer', () => {
+			return {
+				filters: { 'disabled': 0 }
+			};
+		});
+
+		frm.set_query('matter', () => {
+			if (frm.doc.customer) {
+				return {
+					filters: { 'customer': frm.doc.customer }
+				};
+			}
+		});
+
+		frm.set_query('case', () => {
 			if (frm.doc.customer) {
 				return {
 					filters: { 'customer': frm.doc.customer }
