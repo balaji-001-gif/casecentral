@@ -33,6 +33,9 @@ def get_context(context):
     # Get Hearing History (assuming Case History table)
     context.history = sorted(case.case_history, key=lambda x: x.hearing_date or "", reverse=True)
     
+    # Get Matter Details
+    context.matter_doc = frappe.get_doc("Matter", case.matter)
+    
     # Get Attachments
     context.attachments = frappe.get_all("File", 
         filters={"attached_to_doctype": "Case", "attached_to_name": case_name},

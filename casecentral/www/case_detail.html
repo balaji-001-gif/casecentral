@@ -46,6 +46,26 @@
                 </div>
             </div>
 
+            <h3 style="margin-top: 40px; margin-bottom: 24px;">Matter Information</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div class="info-item">
+                    <div class="info-label">Matter ID</div>
+                    <div class="info-value">{{ matter_doc.name }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Matter Status</div>
+                    <div class="info-value">{{ matter_doc.status }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Service</div>
+                    <div class="info-value">{{ matter_doc.service }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Matter Type</div>
+                    <div class="info-value">{{ matter_doc.matter_type or 'N/A' }}</div>
+                </div>
+            </div>
+
             <h3 style="margin-top: 40px; margin-bottom: 16px;">Hearing History</h3>
             <div class="history-list">
                 {% if not history %}
@@ -56,15 +76,15 @@
                         <tr style="text-align: left; border-bottom: 1px solid #e2e8f0;">
                             <th style="padding: 12px 0;">Date</th>
                             <th style="padding: 12px 0;">Purpose</th>
-                            <th style="padding: 12px 0;">Business</th>
+                            <th style="padding: 12px 0;">Business Details</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for h in history %}
                         <tr style="border-bottom: 1px solid #f1f5f9;">
-                            <td style="padding: 12px 0;">{{ h.hearing_date }}</td>
+                            <td style="padding: 12px 0;">{{ h.hearing_date or h.business_on_date }}</td>
                             <td style="padding: 12px 0;">{{ h.purpose_of_hearing or '-' }}</td>
-                            <td style="padding: 12px 0;">{{ h.business_conducted or '-' }}</td>
+                            <td style="padding: 12px 0;">{{ h.business_details or '-' }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
