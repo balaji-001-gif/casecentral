@@ -133,3 +133,35 @@ def send_customer_query(message):
         subject=f"Customer Portal Query from {customer_name}",
         message=msg
     )
+
+@frappe.whitelist()
+def get_customer_contact_info(customer):
+    if not customer:
+        return {}
+
+    customer_doc = frappe.get_value("Customer", customer, ["customer_name", "mobile_no", "email_id"], as_dict=True)
+    if not customer_doc:
+        return {}
+
+    res = {
+        "customer_name": customer_doc.customer_name,
+        "mobile_no": customer_doc.mobile_no,
+        "email_id": customer_doc.email_id
+    }
+
+    # If mobile/email missing on Customer, try to fetch from linked Contact
+    if not res["mobile_no"] or not res["email_id"]:
+        contact_details = frappe.db.sql("""
+            SELECT c.mobile_no, c.email_id 
+            FROM `tabContact` c
+            JOIN `tabDynamic Link` dl ON dl.parent = c.name
+            WHERE dl.link_doctype = 'Customer' AND dl.link_name = %s
+            ORDER BY c.is_primary_contact DESC, c.creation DESC
+            LIMIT 1
+        """, (customer,), as_dict=True)
+        
+        if contact_details:
+            if not res["mobile_no"]: res["mobile_no"] = contact_details[0].mobile_no
+            if not res["email_id"]: res["email_id"] = contact_details[0].email_id
+
+    return res

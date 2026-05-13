@@ -21,13 +21,13 @@ frappe.ui.form.on('Customer Appointment', {
 	customer: function(frm) {
 		if (frm.doc.customer) {
 			frappe.call({
-				method: "frappe.contacts.doctype.contact.contact.get_contact_details",
+				method: "casecentral.utils.get_customer_contact_info",
 				args: {
 					customer: frm.doc.customer
 				},
 				callback: function(r) {
 					if (r.message) {
-						if (r.message.phone) frm.set_value('contact_no', r.message.phone);
+						if (r.message.mobile_no) frm.set_value('contact_no', r.message.mobile_no);
 						if (r.message.email_id) frm.set_value('contact_email', r.message.email_id);
 						if (r.message.customer_name) frm.set_value('customer_name', r.message.customer_name);
 					}
