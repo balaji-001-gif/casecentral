@@ -1,0 +1,72 @@
+{% extends "templates/web.html" %}
+
+{% block header %}
+<link rel="stylesheet" href="/assets/casecentral/css/portal.css">
+{% endblock %}
+
+{% block page_content %}
+<div class="portal-container">
+    <div class="page-header">
+        <div>
+            <a href="/appointments" style="text-decoration: none; color: var(--text-muted); font-size: 0.875rem;">← Back to Appointments</a>
+            <h1 style="margin-top: 8px;">{{ doc.name }}</h1>
+        </div>
+        <div class="status-badge status-{{ doc.status.lower().replace(' ', '') }}" style="font-size: 1rem; padding: 8px 20px;">
+            {{ doc.status }}
+        </div>
+    </div>
+
+    <div class="detail-grid">
+        <div class="glass-card">
+            <h3 style="margin-top: 0; margin-bottom: 24px;">Appointment Information</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div class="info-item">
+                    <div class="info-label">Date</div>
+                    <div class="info-value" style="color: var(--primary);">{{ doc.appointment_date }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Time</div>
+                    <div class="info-value">{{ doc.appointment_time }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Service</div>
+                    <div class="info-value">{{ doc.service }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Consultant</div>
+                    <div class="info-value">{{ doc.consultant or 'N/A' }}</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 32px;">
+                <div class="info-label">Description / Remarks</div>
+                <div class="info-value" style="background: #f8fafc; padding: 16px; border-radius: 8px; margin-top: 8px;">
+                    {{ doc.remarks or 'No remarks provided.' }}
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <h3 style="margin-top: 0; margin-bottom: 24px;">Documents</h3>
+            <div class="attachment-list">
+                {% if not attachments %}
+                <p class="text-muted">No documents uploaded yet.</p>
+                {% else %}
+                {% for att in attachments %}
+                <a href="{{ att.file_url }}" target="_blank" class="glass-card" style="display: block; padding: 12px; margin-bottom: 12px; text-decoration: none; color: inherit; font-size: 0.875rem;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 1.5rem;">📄</span>
+                        <div style="overflow: hidden;">
+                            <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ att.file_name }}</div>
+                            <div class="text-muted" style="font-size: 0.75rem;">{{ frappe.format_date(att.creation) }}</div>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+                {% endif %}
+                <a href="/upload-document?doctype=Customer+Appointment&name={{ doc.name }}" class="btn-primary" style="display: block; text-align: center; margin-top: 24px;">Upload New</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -25,7 +25,7 @@
     {% else %}
     <div class="case-list">
         {% for appt in appointments %}
-        <div class="glass-card case-card">
+        <div class="glass-card case-card" onclick="window.location.href='/appointment-detail?name={{ appt.name }}'">
             <div class="status-badge status-{{ appt.status.lower() }}">
                 {{ appt.status }}
             </div>
