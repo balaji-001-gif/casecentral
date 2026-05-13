@@ -11,9 +11,11 @@ def get_context(context):
     if not customer:
         # Fallback to contact check
         customer_id = frappe.db.sql("""
-            SELECT parent FROM `tabDynamic Link` 
-            WHERE link_doctype='Customer' AND parenttype='Contact' 
-            AND EXISTS (SELECT name FROM `tabContact` WHERE name=`tabDynamic Link`.parent AND email_id=%s)
+            SELECT dl.link_name 
+            FROM `tabDynamic Link` dl
+            JOIN `tabContact` c ON c.name = dl.parent
+            WHERE dl.link_doctype = 'Customer' 
+            AND c.email_id = %s
         """, (user_email,))
         if customer_id:
             customer = customer_id[0][0]

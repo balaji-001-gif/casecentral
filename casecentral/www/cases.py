@@ -5,20 +5,21 @@ def get_context(context):
     if frappe.session.user == "Guest":
         frappe.throw(_("Please login to access this page"), frappe.PermissionError)
 
-    # Get Customer linked to the User
-    customer = frappe.db.get_value("Contact", {"email_id": frappe.session.user}, "links")
-    # Alternatively, use Customer directly if User is linked
-    customer = frappe.db.get_value("Customer", {"email_id": frappe.session.user}, "name")
+    # Permission Check: Ensure the case belongs to the logged-in customer
+    user_email = frappe.session.user
+    customer = frappe.db.get_value("Customer", {"email_id": user_email}, "name")
     
     if not customer:
-        # Check if the user is a customer contact
-        customer = frappe.db.sql("""
-            SELECT parent FROM `tabDynamic Link` 
-            WHERE link_doctype='Customer' AND parenttype='Contact' 
-            AND EXISTS (SELECT name FROM `tabContact` WHERE name=`tabDynamic Link`.parent AND email_id=%s)
-        """, (frappe.session.user,))
-        if customer:
-            customer = customer[0][0]
+        # Fallback to contact check
+        customer_id = frappe.db.sql("""
+            SELECT dl.link_name 
+            FROM `tabDynamic Link` dl
+            JOIN `tabContact` c ON c.name = dl.parent
+            WHERE dl.link_doctype = 'Customer' 
+            AND c.email_id = %s
+        """, (user_email,))
+        if customer_id:
+            customer = customer_id[0][0]
 
     if not customer:
         context.no_customer = True
