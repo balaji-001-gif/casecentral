@@ -1,0 +1,43 @@
+{% extends "templates/web.html" %}
+
+{% block header %}
+<link rel="stylesheet" href="/assets/casecentral/css/portal.css">
+{% endblock %}
+
+{% block page_content %}
+<div class="portal-container">
+    <div class="page-header">
+        <div>
+            <a href="/portal-home" style="text-decoration: none; color: var(--text-muted); font-size: 0.875rem;">← Dashboard</a>
+            <h1 style="margin-top: 8px;">My Matters</h1>
+        </div>
+        <a href="/upload-document?doctype=Matter" class="btn-primary">Upload Matter Document</a>
+    </div>
+
+    {% if no_customer %}
+    <div class="glass-card text-center">
+        <p>You are not yet linked to a customer account.</p>
+    </div>
+    {% elif not matters %}
+    <div class="glass-card text-center">
+        <p>No matters found.</p>
+    </div>
+    {% else %}
+    <div class="case-list">
+        {% for matter in matters %}
+        <div class="glass-card case-card" onclick="window.location.href='/matter-detail?name={{ matter.name }}'">
+            <div class="status-badge status-{{ matter.status.lower() }}">
+                {{ matter.status }}
+            </div>
+            <div class="case-title">{{ matter.name }}</div>
+            <div class="case-meta">
+                <div>Type: {{ matter.matter_type or 'N/A' }}</div>
+                <div>Service: {{ matter.service }}</div>
+                <div style="margin-top: 8px;">Posted on: {{ matter.posting_date }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -43,33 +43,30 @@ def get_uninvoced_legal_services(matter, company):
     return services_to_invoice
 
 @frappe.whitelist()
-def upload_portal_document(case, file_name, file_content):
+def upload_portal_document(doctype, docname, file_name, file_content):
     # Verify ownership
     user_email = frappe.session.user
     customer = frappe.db.get_value("Customer", {"email_id": user_email}, "name")
     
     if not customer:
-        # Fallback to contact check
         customer_id = frappe.db.sql("""
-            SELECT dl.link_name 
-            FROM `tabDynamic Link` dl
+            SELECT dl.link_name FROM `tabDynamic Link` dl
             JOIN `tabContact` c ON c.name = dl.parent
-            WHERE dl.link_doctype = 'Customer' 
-            AND c.email_id = %s
+            WHERE dl.link_doctype = 'Customer' AND c.email_id = %s
         """, (user_email,))
         if customer_id:
             customer = customer_id[0][0]
 
-    case_doc = frappe.get_doc("Case", case)
-    if case_doc.customer != customer:
+    doc = frappe.get_doc(doctype, docname)
+    if doc.customer != customer:
         frappe.throw("Permission Denied", frappe.PermissionError)
 
     # Create File record
     _file = frappe.get_doc({
         "doctype": "File",
         "file_name": file_name,
-        "attached_to_doctype": "Case",
-        "attached_to_name": case,
+        "attached_to_doctype": doctype,
+        "attached_to_name": docname,
         "content": file_content,
         "is_private": 1
     })
@@ -82,17 +79,35 @@ def upload_portal_document(case, file_name, file_content):
         
         frappe.sendmail(
             recipients=[admin_email],
-            subject=f"New Document Uploaded: {file_name}",
+            subject=f"New Document Uploaded [{doctype}]: {file_name}",
             message=f"""
                 <p>Hello Administrator,</p>
-                <p>A new document has been uploaded by <b>{customer_name}</b> via the Customer Portal.</p>
-                <p><b>Case:</b> {case_doc.case_title or case_doc.name}</p>
+                <p>A new document has been uploaded by <b>{customer_name}</b>.</p>
+                <p><b>Target:</b> {doctype} - {docname}</p>
                 <p><b>File Name:</b> {file_name}</p>
-                <p><a href="{frappe.utils.get_url_to_form('Case', case)}">View Case in Desk</a></p>
+                <p><a href="{frappe.utils.get_url_to_form(doctype, docname)}">View Record in Desk</a></p>
             """
         )
     except Exception:
-        # Don't block the upload if email fails
         pass
 
     return _file.name
+
+@frappe.whitelist()
+def send_customer_query(message):
+    user_email = frappe.session.user
+    customer = frappe.db.get_value("Customer", {"email_id": user_email}, "customer_name") or user_email
+
+    admin_email = frappe.db.get_value("User", {"name": "Administrator"}, "email") or "admin@example.com"
+    
+    frappe.sendmail(
+        recipients=[admin_email],
+        subject=f"Customer Portal Query from {customer}",
+        message=f"""
+            <p>You have received a new query from the customer portal:</p>
+            <blockquote style="padding: 10px; background: #f1f5f9; border-left: 4px solid #4f46e5;">
+                {message}
+            </blockquote>
+            <p><b>From:</b> {user_email}</p>
+        """
+    )

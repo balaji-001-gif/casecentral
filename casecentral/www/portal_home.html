@@ -1,0 +1,133 @@
+{% extends "templates/web.html" %}
+
+{% block header %}
+<link rel="stylesheet" href="/assets/casecentral/css/portal.css">
+{% endblock %}
+
+{% block page_content %}
+<div class="portal-container">
+    <div class="page-header">
+        <div>
+            <h1>Dashboard</h1>
+            <p class="text-muted">Hello, {{ customer_name or 'Valued Client' }}</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <a href="/upload-document" class="btn-primary">Upload Document</a>
+            <button class="btn-primary" style="background: #9333ea;" onclick="showSupportModal()">Have a Doubt?</button>
+        </div>
+    </div>
+
+    {% if no_customer %}
+    <div class="glass-card text-center">
+        <p>You are not yet linked to a customer account. Please contact support.</p>
+    </div>
+    {% else %}
+    <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 40px;">
+        <div class="glass-card module-card" onclick="window.location.href='/matters'">
+            <div style="font-size: 2.5rem; margin-bottom: 16px;">📁</div>
+            <h3>Matters</h3>
+            <p class="text-muted">{{ matter_count }} Active Matters</p>
+            <div class="btn-text" style="color: var(--primary); font-weight: 600; margin-top: 12px;">View All →</div>
+        </div>
+
+        <div class="glass-card module-card" onclick="window.location.href='/cases'">
+            <div style="font-size: 2.5rem; margin-bottom: 16px;">⚖️</div>
+            <h3>Cases</h3>
+            <p class="text-muted">{{ case_count }} Active Cases</p>
+            <div class="btn-text" style="color: var(--primary); font-weight: 600; margin-top: 12px;">View All →</div>
+        </div>
+
+        <div class="glass-card module-card" onclick="window.location.href='/appointments'">
+            <div style="font-size: 2.5rem; margin-bottom: 16px;">📅</div>
+            <h3>Appointments</h3>
+            <p class="text-muted">{{ appointment_count }} Pending Appointments</p>
+            <div class="btn-text" style="color: var(--primary); font-weight: 600; margin-top: 12px;">View All →</div>
+        </div>
+    </div>
+
+    <div class="detail-grid">
+        <div class="glass-card">
+            <h3>Recent Activity</h3>
+            {% if not recent_cases and not recent_appointments %}
+            <p class="text-muted">No recent activity.</p>
+            {% else %}
+            <ul style="list-style: none; padding: 0;">
+                {% for case in recent_cases %}
+                <li style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-weight: 500;">Case: {{ case.case_title or case.name }}</span>
+                        <span class="status-badge status-{{ case.status.lower().replace(' ', '') }}">{{ case.status }}</span>
+                    </div>
+                    <div class="text-muted" style="font-size: 0.875rem;">Next Hearing: {{ case.next_hearing_date or 'TBA' }}</div>
+                </li>
+                {% endfor %}
+                {% for appt in recent_appointments %}
+                <li style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-weight: 500;">Appointment: {{ appt.name }}</span>
+                        <span class="status-badge status-{{ appt.status.lower().replace(' ', '') }}">{{ appt.status }}</span>
+                    </div>
+                    <div class="text-muted" style="font-size: 0.875rem;">Date: {{ appt.appointment_date }}</div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Support Modal -->
+<div id="support-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="glass-card" style="width: 100%; max-width: 500px; margin: 20px;">
+        <h3>How can we help?</h3>
+        <p class="text-muted">Send us your query and our team will get back to you.</p>
+        <div class="form-group">
+            <textarea id="query-text" class="form-control" rows="5" placeholder="Describe your doubt here..."></textarea>
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn-primary" style="background: #e2e8f0; color: #1e293b;" onclick="hideSupportModal()">Cancel</button>
+            <button id="send-query-btn" class="btn-primary" onclick="sendQuery()">Send Query</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function showSupportModal() {
+    document.getElementById('support-modal').style.display = 'flex';
+}
+
+function hideSupportModal() {
+    document.getElementById('support-modal').style.display = 'none';
+}
+
+function sendQuery() {
+    const query = document.getElementById('query-text').value;
+    if(!query) return;
+
+    const btn = document.getElementById('send-query-btn');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    frappe.call({
+        method: 'casecentral.utils.send_customer_query',
+        args: { message: query },
+        callback: function(r) {
+            alert('Your query has been sent to our team.');
+            hideSupportModal();
+            document.getElementById('query-text').value = '';
+            btn.disabled = false;
+            btn.textContent = 'Send Query';
+        }
+    });
+}
+</script>
+
+<style>
+.module-card {
+    cursor: pointer;
+    text-align: center;
+    padding: 40px 24px;
+}
+</style>
+{% endblock %}

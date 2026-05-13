@@ -8,133 +8,120 @@
 <div class="portal-container">
     <div class="page-header">
         <div>
-            <a href="/cases" style="text-decoration: none; color: var(--text-muted); font-size: 0.875rem;">← Back to Cases</a>
+            <a href="/portal-home" style="text-decoration: none; color: var(--text-muted); font-size: 0.875rem;">← Dashboard</a>
             <h1 style="margin-top: 8px;">Upload Document</h1>
         </div>
     </div>
 
-    <div class="glass-card" style="max-width: 600px; margin: 0 auto;">
-        <div id="upload-form">
-            <div class="form-group">
-                <label class="form-label">Select Case</label>
-                <select id="case-select" class="form-control">
-                    <option value="">-- Choose a Case --</option>
-                    {% for case in cases %}
-                    <option value="{{ case.name }}" {% if case.name == selected_case %}selected{% endif %}>
-                        {{ case.case_title or case.name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Document</label>
-                <div id="drop-zone" class="drop-zone">
-                    <p>Click or drag file here to upload</p>
-                    <input type="file" id="file-input" style="display: none;">
-                    <div id="file-info" style="margin-top: 10px; font-weight: 500; display: none;"></div>
-                </div>
-            </div>
-
-            <div id="status-msg" style="margin-bottom: 20px; display: none; padding: 12px; border-radius: 8px;"></div>
-
-            <button id="upload-btn" class="btn-primary" style="width: 100%;" disabled>Upload to Case</button>
-        </div>
+    {% if no_customer %}
+    <div class="glass-card text-center">
+        <p>You are not yet linked to a customer account.</p>
     </div>
+    {% else %}
+    <div class="glass-card" style="max-width: 600px; margin: 0 auto;">
+        <div class="form-group">
+            <label class="info-label">Upload For</label>
+            <select id="doctype-select" class="form-control" onchange="window.location.href='/upload-document?doctype=' + this.value">
+                <option value="Case" {% if target_doctype == 'Case' %}selected{% endif %}>Case</option>
+                <option value="Matter" {% if target_doctype == 'Matter' %}selected{% endif %}>Matter</option>
+                <option value="Customer Appointment" {% if target_doctype == 'Customer Appointment' %}selected{% endif %}>Appointment</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="info-label">Select {{ target_doctype }}</label>
+            <select id="doc-select" class="form-control">
+                <option value="">-- Choose --</option>
+                {% for d in docs %}
+                <option value="{{ d.name }}" {% if pre_selected_doc == d.name %}selected{% endif %}>
+                    {{ d.title }} ({{ d.name }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="info-label">Document</label>
+            <div id="drop-zone" class="drop-zone">
+                <p id="file-name-display">Click or drag file here to upload</p>
+                <input type="file" id="file-input" style="display: none;">
+            </div>
+        </div>
+
+        <button id="upload-btn" class="btn-primary" style="width: 100%; padding: 16px; margin-top: 24px;">Upload Document</button>
+        <div id="status-msg" style="margin-top: 16px; text-align: center; display: none;"></div>
+    </div>
+    {% endif %}
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
-    const fileInfo = document.getElementById('file-info');
+    const fileDisplay = document.getElementById('file-name-display');
     const uploadBtn = document.getElementById('upload-btn');
-    const caseSelect = document.getElementById('case-select');
     const statusMsg = document.getElementById('status-msg');
+    const docSelect = document.getElementById('doc-select');
+    const doctypeSelect = document.getElementById('doctype-select');
 
     let selectedFile = null;
 
     dropZone.addEventListener('click', () => fileInput.click());
-
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            selectedFile = e.target.files[0];
-            fileInfo.textContent = `Selected: ${selectedFile.name}`;
-            fileInfo.style.display = 'block';
-            checkReady();
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = 'var(--primary)'; });
+    dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#e2e8f0'; });
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#e2e8f0';
+        if (e.dataTransfer.files.length) {
+            selectedFile = e.dataTransfer.files[0];
+            fileDisplay.textContent = `Selected: ${selectedFile.name}`;
         }
     });
 
-    caseSelect.addEventListener('change', checkReady);
-
-    function checkReady() {
-        uploadBtn.disabled = !(selectedFile && caseSelect.value);
-    }
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) {
+            selectedFile = fileInput.files[0];
+            fileDisplay.textContent = `Selected: ${selectedFile.name}`;
+        }
+    });
 
     uploadBtn.addEventListener('click', function() {
-        if (!selectedFile || !caseSelect.value) return;
+        if (!selectedFile || !docSelect.value) {
+            alert('Please select both a record and a file.');
+            return;
+        }
 
         const reader = new FileReader();
         reader.onload = function() {
-            const base64Content = reader.result.split(',')[1];
+            const base64 = reader.result.split(',')[1];
             
             uploadBtn.disabled = true;
             uploadBtn.textContent = 'Uploading...';
-            statusMsg.style.display = 'none';
+            statusMsg.style.display = 'block';
+            statusMsg.textContent = 'Uploading document, please wait...';
+            statusMsg.style.color = 'var(--primary)';
 
             frappe.call({
                 method: 'casecentral.utils.upload_portal_document',
                 args: {
-                    case: caseSelect.value,
+                    doctype: doctypeSelect.value,
+                    docname: docSelect.value,
                     file_name: selectedFile.name,
-                    file_content: base64Content
+                    file_content: base64
                 },
                 callback: function(r) {
-                    if (r.message) {
-                        statusMsg.textContent = 'Document uploaded successfully!';
-                        statusMsg.style.background = '#dcfce7';
-                        statusMsg.style.color = '#166534';
-                        statusMsg.style.display = 'block';
-                        uploadBtn.textContent = 'Upload to Case';
-                        
+                    uploadBtn.disabled = false;
+                    uploadBtn.textContent = 'Upload Document';
+                    if (!r.exc) {
+                        statusMsg.textContent = 'Successfully uploaded!';
+                        statusMsg.style.color = '#10b981';
                         setTimeout(() => {
-                            window.location.href = `/case-detail?name=${caseSelect.value}`;
+                            window.location.href = `/portal-home`;
                         }, 1500);
                     }
-                },
-                error: function(err) {
-                    statusMsg.textContent = 'Error uploading document. Please try again.';
-                    statusMsg.style.background = '#fee2e2';
-                    statusMsg.style.color = '#991b1b';
-                    statusMsg.style.display = 'block';
-                    uploadBtn.disabled = false;
-                    uploadBtn.textContent = 'Upload to Case';
                 }
             });
         };
         reader.readAsDataURL(selectedFile);
     });
-
-    // Drag and drop
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.style.borderColor = '#4f46e5';
-    });
-
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.style.borderColor = '#cbd5e1';
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.style.borderColor = '#cbd5e1';
-        if (e.dataTransfer.files.length > 0) {
-            selectedFile = e.dataTransfer.files[0];
-            fileInfo.textContent = `Selected: ${selectedFile.name}`;
-            fileInfo.style.display = 'block';
-            checkReady();
-        }
-    });
-});
 </script>
 {% endblock %}

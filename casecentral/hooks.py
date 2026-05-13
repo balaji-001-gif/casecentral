@@ -158,11 +158,20 @@ scheduler_events = {
 }
 
 portal_menu_items = [
+    {"title": "Dashboard", "route": "/portal-home", "role": "Customer"},
+    {"title": "Matters", "route": "/matters", "role": "Customer"},
     {"title": "Cases", "route": "/cases", "role": "Customer"},
+    {"title": "Appointments", "route": "/appointments", "role": "Customer"},
     {"title": "Upload Document", "route": "/upload-document", "role": "Customer"}
 ]
 
 website_route_rules = [
+    {"from_route": "/portal-home", "to_route": "portal_home"},
+    {"from_route": "/matters", "to_route": "matters"},
+    {"from_route": "/matter-detail", "to_route": "matter_detail"},
+    {"from_route": "/cases", "to_route": "cases"},
     {"from_route": "/case-detail", "to_route": "case_detail"},
+    {"from_route": "/appointments", "to_route": "appointments"},
+    {"from_route": "/appointment-detail", "to_route": "appointment_detail"},
     {"from_route": "/upload-document", "to_route": "upload_document"}
 ]
