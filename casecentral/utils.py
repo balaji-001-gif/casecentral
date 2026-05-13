@@ -75,4 +75,24 @@ def upload_portal_document(case, file_name, file_content):
     })
     _file.save(ignore_permissions=True)
     
+    # Notify Admin
+    try:
+        admin_email = frappe.db.get_value("User", {"name": "Administrator"}, "email") or "admin@example.com"
+        customer_name = frappe.db.get_value("Customer", customer, "customer_name")
+        
+        frappe.sendmail(
+            recipients=[admin_email],
+            subject=f"New Document Uploaded: {file_name}",
+            message=f"""
+                <p>Hello Administrator,</p>
+                <p>A new document has been uploaded by <b>{customer_name}</b> via the Customer Portal.</p>
+                <p><b>Case:</b> {case_doc.case_title or case_doc.name}</p>
+                <p><b>File Name:</b> {file_name}</p>
+                <p><a href="{frappe.utils.get_url_to_form('Case', case)}">View Case in Desk</a></p>
+            """
+        )
+    except Exception:
+        # Don't block the upload if email fails
+        pass
+
     return _file.name
