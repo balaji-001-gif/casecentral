@@ -24,7 +24,7 @@ def get_context(context):
 
     context.appointments = frappe.get_all("Customer Appointment", 
         filters={"customer": customer},
-        fields=["name", "status", "appointment_date", "appointment_time", "service"],
+        fields=["name", "status", "appointment_date", "appointment_time", "appointment_type"],
         order_by="appointment_date desc",
         ignore_permissions=True
     )
