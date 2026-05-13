@@ -36,5 +36,6 @@ def get_context(context):
     # Get Attachments
     context.attachments = frappe.get_all("File", 
         filters={"attached_to_doctype": "Case", "attached_to_name": case_name},
-        fields=["file_name", "file_url", "creation"]
+        fields=["file_name", "file_url", "creation"],
+        ignore_permissions=True
     )

@@ -28,7 +28,8 @@ def get_context(context):
     context.cases = frappe.get_all("Case", 
         filters={"customer": customer},
         fields=["name", "case_title", "status", "next_hearing_date", "case_no", "case_year", "court_number_and_judge"],
-        order_by="creation desc"
+        order_by="creation desc",
+        ignore_permissions=True
     )
     
     context.customer_name = frappe.db.get_value("Customer", customer, "customer_name")

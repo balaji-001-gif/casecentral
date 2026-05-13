@@ -29,6 +29,7 @@ def get_context(context):
     
     # Get all active cases for selection
     context.cases = frappe.get_all("Case", 
-        filters={"customer": customer, "status": ["in", ["Pending", "InProgress"]]},
-        fields=["name", "case_title"]
+        filters={"customer": customer, "status": ["not in", ["Disposed", "NOC"]]},
+        fields=["name", "case_title"],
+        ignore_permissions=True
     )
