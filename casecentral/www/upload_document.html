@@ -1,0 +1,140 @@
+{% extends "templates/web.html" %}
+
+{% block header %}
+<link rel="stylesheet" href="/assets/casecentral/css/portal.css">
+{% endblock %}
+
+{% block page_content %}
+<div class="portal-container">
+    <div class="page-header">
+        <div>
+            <a href="/cases" style="text-decoration: none; color: var(--text-muted); font-size: 0.875rem;">← Back to Cases</a>
+            <h1 style="margin-top: 8px;">Upload Document</h1>
+        </div>
+    </div>
+
+    <div class="glass-card" style="max-width: 600px; margin: 0 auto;">
+        <div id="upload-form">
+            <div class="form-group">
+                <label class="form-label">Select Case</label>
+                <select id="case-select" class="form-control">
+                    <option value="">-- Choose a Case --</option>
+                    {% for case in cases %}
+                    <option value="{{ case.name }}" {% if case.name == selected_case %}selected{% endif %}>
+                        {{ case.case_title or case.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Document</label>
+                <div id="drop-zone" class="drop-zone">
+                    <p>Click or drag file here to upload</p>
+                    <input type="file" id="file-input" style="display: none;">
+                    <div id="file-info" style="margin-top: 10px; font-weight: 500; display: none;"></div>
+                </div>
+            </div>
+
+            <div id="status-msg" style="margin-bottom: 20px; display: none; padding: 12px; border-radius: 8px;"></div>
+
+            <button id="upload-btn" class="btn-primary" style="width: 100%;" disabled>Upload to Case</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const fileInfo = document.getElementById('file-info');
+    const uploadBtn = document.getElementById('upload-btn');
+    const caseSelect = document.getElementById('case-select');
+    const statusMsg = document.getElementById('status-msg');
+
+    let selectedFile = null;
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            selectedFile = e.target.files[0];
+            fileInfo.textContent = `Selected: ${selectedFile.name}`;
+            fileInfo.style.display = 'block';
+            checkReady();
+        }
+    });
+
+    caseSelect.addEventListener('change', checkReady);
+
+    function checkReady() {
+        uploadBtn.disabled = !(selectedFile && caseSelect.value);
+    }
+
+    uploadBtn.addEventListener('click', function() {
+        if (!selectedFile || !caseSelect.value) return;
+
+        const reader = new FileReader();
+        reader.onload = function() {
+            const base64Content = reader.result.split(',')[1];
+            
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Uploading...';
+            statusMsg.style.display = 'none';
+
+            frappe.call({
+                method: 'casecentral.utils.upload_portal_document',
+                args: {
+                    case: caseSelect.value,
+                    file_name: selectedFile.name,
+                    file_content: base64Content
+                },
+                callback: function(r) {
+                    if (r.message) {
+                        statusMsg.textContent = 'Document uploaded successfully!';
+                        statusMsg.style.background = '#dcfce7';
+                        statusMsg.style.color = '#166534';
+                        statusMsg.style.display = 'block';
+                        uploadBtn.textContent = 'Upload to Case';
+                        
+                        setTimeout(() => {
+                            window.location.href = `/case-detail?name=${caseSelect.value}`;
+                        }, 1500);
+                    }
+                },
+                error: function(err) {
+                    statusMsg.textContent = 'Error uploading document. Please try again.';
+                    statusMsg.style.background = '#fee2e2';
+                    statusMsg.style.color = '#991b1b';
+                    statusMsg.style.display = 'block';
+                    uploadBtn.disabled = false;
+                    uploadBtn.textContent = 'Upload to Case';
+                }
+            });
+        };
+        reader.readAsDataURL(selectedFile);
+    });
+
+    // Drag and drop
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#4f46e5';
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.style.borderColor = '#cbd5e1';
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#cbd5e1';
+        if (e.dataTransfer.files.length > 0) {
+            selectedFile = e.dataTransfer.files[0];
+            fileInfo.textContent = `Selected: ${selectedFile.name}`;
+            fileInfo.style.display = 'block';
+            checkReady();
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -156,3 +156,8 @@ scheduler_events = {
         "casecentral.case_central.doctype.customer_appointment.customer_appointment.update_appointment_status"
 	]
 }
+
+portal_menu_items = [
+    {"title": "Cases", "route": "/cases", "role": "Customer"},
+    {"title": "Upload Document", "route": "/upload-document", "role": "Customer"}
+]

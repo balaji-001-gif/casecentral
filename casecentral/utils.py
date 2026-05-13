@@ -41,3 +41,36 @@ def get_uninvoced_legal_services(matter, company):
             })
     
     return services_to_invoice
+
+@frappe.whitelist()
+def upload_portal_document(case, file_name, file_content):
+    # Verify ownership
+    user_email = frappe.session.user
+    customer = frappe.db.get_value("Customer", {"email_id": user_email}, "name")
+    
+    if not customer:
+        # Fallback to contact check
+        customer_id = frappe.db.sql("""
+            SELECT parent FROM `tabDynamic Link` 
+            WHERE link_doctype='Customer' AND parenttype='Contact' 
+            AND EXISTS (SELECT name FROM `tabContact` WHERE name=`tabDynamic Link`.parent AND email_id=%s)
+        """, (user_email,))
+        if customer_id:
+            customer = customer_id[0][0]
+
+    case_doc = frappe.get_doc("Case", case)
+    if case_doc.customer != customer:
+        frappe.throw("Permission Denied", frappe.PermissionError)
+
+    # Create File record
+    _file = frappe.get_doc({
+        "doctype": "File",
+        "file_name": file_name,
+        "attached_to_doctype": "Case",
+        "attached_to_name": case,
+        "content": file_content,
+        "is_private": 1
+    })
+    _file.save(ignore_permissions=True)
+    
+    return _file.name
